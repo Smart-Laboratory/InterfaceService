@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="
+        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+        http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd
+        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd
+        http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+        http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.0.xsd">
+
+    <!-- Activates scanning of @Autowired -->
+    <context:annotation-config/>
+
+    <!-- Activates scanning of @Repository -->
+    <context:component-scan base-package="com.zcw.webservice.dao" />
+
+    <!-- 支持注解的事务，用于测试 -->
+    <!--<aop:aspectj-autoproxy/>	&lt;!&ndash; task任务扫描注解 &ndash;&gt;-->
+    <!--<task:annotation-driven/>-->
+    <!-- 定义数据源Bean，使用C3P0数据源实现 -->
+    <bean id="jdbcConfig" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="location">
+            <value>classpath:jdbc.properties</value>
+        </property>
+    </bean>
+    <bean id="dataSourceHis" class="com.mchange.v2.c3p0.ComboPooledDataSource"
+          destroy-method="close">
+        <property name="driverClass" value="${his.jdbc.driver}" />
+        <property name="jdbcUrl" value="${his.jdbc.url}" />
+        <property name="user" value="${his.jdbc.user}" />
+        <property name="password" value="${his.jdbc.password}" />
+        <property name="initialPoolSize" value="${his.jdbc.initialPoolSize}" />
+        <property name="minPoolSize" value="${his.jdbc.minPoolSize}" />
+        <property name="maxPoolSize" value="${his.jdbc.maxPoolSize}" />
+    </bean>
+    <bean id="dataSourceLis" class="com.mchange.v2.c3p0.ComboPooledDataSource"
+          destroy-method="close">
+        <property name="driverClass" value="${lis.jdbc.driver}" />
+        <property name="jdbcUrl" value="${lis.jdbc.url}" />
+        <property name="user" value="${lis.jdbc.user}" />
+        <property name="password" value="${lis.jdbc.password}" />
+        <property name="initialPoolSize" value="${lis.jdbc.initialPoolSize}" />
+        <property name="minPoolSize" value="${lis.jdbc.minPoolSize}" />
+        <property name="maxPoolSize" value="${lis.jdbc.maxPoolSize}" />
+    </bean>
+    <bean id="dynamicDataSource" class="com.zcw.webservice.datasource.DynamicDataSource" >
+        <!-- 通过key-value的形式来关联数据源 -->
+        <property name="targetDataSources">
+            <map>
+                <entry value-ref="dataSourceLis" key="dataSourceLis"></entry>
+                <entry value-ref="dataSourceHis" key="dataSourceHis"></entry>
+            </map>
+        </property>
+        <property name="defaultTargetDataSource" ref="dataSourceLis" />
+    </bean>
+    <!-- JdbcTemplate使用动态数据源的配置 -->
+    <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+        <property name="dataSource">
+            <ref bean="dynamicDataSource" />
+        </property>
+    </bean>
+    <bean id="lisJdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+        <property name="dataSource">
+            <ref bean="dataSourceLis" />
+        </property>
+    </bean>
+    <bean id="hisJdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+        <property name="dataSource">
+            <ref bean="dataSourceHis" />
+        </property>
+    </bean>
+</beans>
